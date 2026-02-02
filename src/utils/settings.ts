@@ -63,7 +63,7 @@ export const getSettings = async (): Promise<Settings> => {
     hostname: settings.hostname,
     loggingEnabled: settings.loggingEnabled,
     loggingStyle: 'allow',
-    loggingType: settings.loggingType,
+    loggingType: 'domain',
     socialMediaSites: settings.socialMediaSites,
     theme: settings.theme,
     trackSocialMedia: settings.trackSocialMedia,

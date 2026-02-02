@@ -86,12 +86,6 @@ export default function Options(): JSX.Element {
     }));
   }, []);
 
-  const updateLoggingType = useCallback((type: string) => {
-    setState((oldState) => ({
-      ...oldState,
-      loggingType: type === 'url' ? 'url' : 'domain',
-    }));
-  }, []);
 
   const updateTheme = useCallback((theme: string) => {
     setState((oldState) => ({
@@ -140,21 +134,6 @@ export default function Options(): JSX.Element {
             </div>
 
             {allowedSitesList}
-
-            <div className="form-group mb-4">
-              <label htmlFor="loggingType" className="form-label">
-                Logging type
-              </label>
-              <select
-                id="loggingType"
-                className="form-control"
-                value={state.loggingType}
-                onChange={(e) => updateLoggingType(e.target.value)}
-              >
-                <option value="domain">Only the domain</option>
-                <option value="url">Entire URL</option>
-              </select>
-            </div>
 
             <div className="form-group mb-4">
               <label htmlFor="selectTheme" className="form-label mb-0">
