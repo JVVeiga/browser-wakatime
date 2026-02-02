@@ -27,9 +27,7 @@ export default function Options(): JSX.Element {
     loggingEnabled: true,
     loggingStyle: config.loggingStyle,
     loggingType: config.loggingType,
-    socialMediaSites: config.socialMediaSites,
     theme: config.theme,
-    trackSocialMedia: config.trackSocialMedia,
   });
 
   const isApiKeyValid = useMemo(() => apiKeyInvalid(state.apiKey) === '', [state.apiKey]);
@@ -61,9 +59,7 @@ export default function Options(): JSX.Element {
       loggingEnabled: state.loggingEnabled,
       loggingStyle: state.loggingStyle,
       loggingType: state.loggingType,
-      socialMediaSites: state.socialMediaSites.filter((item) => !!item.trim()),
       theme: state.theme,
-      trackSocialMedia: state.trackSocialMedia,
     });
     setState(state);
     await logUserIn(state.apiKey);
@@ -91,13 +87,6 @@ export default function Options(): JSX.Element {
     setState((oldState) => ({
       ...oldState,
       theme: theme === 'light' ? 'light' : 'dark',
-    }));
-  }, []);
-
-  const toggleSocialMedia = useCallback(() => {
-    setState((oldState) => ({
-      ...oldState,
-      trackSocialMedia: !oldState.trackSocialMedia,
     }));
   }, []);
 
@@ -187,68 +176,6 @@ export default function Options(): JSX.Element {
                 placeholder="https://api.wakatime.com/api/v1"
               />
               <span className="help-block">https://api.wakatime.com/api/v1</span>
-            </div>
-
-            <div className="form-group row mb-4">
-              <div className="col-lg-10 col-lg-offset-2 space-between align-items-center">
-                <div>
-                  <input
-                    type="checkbox"
-                    className="me-2"
-                    checked={state.trackSocialMedia}
-                    onChange={toggleSocialMedia}
-                  />
-                  <span onClick={toggleSocialMedia}>Track social media sites</span>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  data-bs-toggle="modal"
-                  data-bs-target="#socialSitesModal"
-                >
-                  Sites
-                </button>
-                <div
-                  className="modal fade"
-                  id="socialSitesModal"
-                  role="dialog"
-                  aria-labelledby="socialSitesModalLabel"
-                >
-                  <div className="modal-dialog" role="document">
-                    <div className="modal-content">
-                      <div className="modal-header">
-                        <h4 className="modal-title fs-5" id="socialSitesModalLabel">
-                          Social Media Sites
-                        </h4>
-                        <button
-                          type="button"
-                          className="btn-close"
-                          data-bs-dismiss="modal"
-                          aria-label="Close"
-                        />
-                      </div>
-                      <div className="modal-body">
-                        <SitesList
-                          handleChange={(socialMediaSites) => {
-                            setState((oldState) => ({
-                              ...oldState,
-                              socialMediaSites,
-                            }));
-                          }}
-                          label="Social"
-                          sites={state.socialMediaSites}
-                          helpText="Sites that you don't want to show in your reports."
-                        />
-                      </div>
-                      <div className="modal-footer">
-                        <button type="button" className="btn btn-primary" data-bs-dismiss="modal">
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div className="form-group mb-4">

@@ -16,9 +16,7 @@ export interface Settings {
   loggingEnabled: boolean;
   loggingStyle: LoggingStyle;
   loggingType: LoggingType;
-  socialMediaSites: string[];
   theme: Theme;
-  trackSocialMedia: boolean;
 }
 
 export const getSettings = async (): Promise<Settings> => {
@@ -31,12 +29,9 @@ export const getSettings = async (): Promise<Settings> => {
     loggingEnabled: config.loggingEnabled,
     loggingStyle: config.loggingStyle,
     loggingType: config.loggingType,
-    socialMediaSites: config.socialMediaSites,
     theme: config.theme,
-    trackSocialMedia: true,
     whitelist: null,
-  })) as Omit<Settings, 'socialMediaSites'> & {
-    socialMediaSites: string[] | string;
+  })) as Settings & {
     whitelist?: string;
   };
 
@@ -45,13 +40,6 @@ export const getSettings = async (): Promise<Settings> => {
     settings.allowList = settings.whitelist.trim().split('\n');
     await browser.storage.sync.set({ allowList: settings.allowList });
     await browser.storage.sync.remove('whitelist');
-  }
-
-  if (typeof settings.socialMediaSites === 'string') {
-    settings.socialMediaSites = settings.socialMediaSites.trim().split('\n');
-    await browser.storage.sync.set({
-      socialMediaSites: settings.socialMediaSites,
-    });
   }
 
   return {
@@ -64,9 +52,7 @@ export const getSettings = async (): Promise<Settings> => {
     loggingEnabled: settings.loggingEnabled,
     loggingStyle: 'allow',
     loggingType: 'domain',
-    socialMediaSites: settings.socialMediaSites,
     theme: settings.theme,
-    trackSocialMedia: settings.trackSocialMedia,
   };
 };
 

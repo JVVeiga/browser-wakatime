@@ -59,19 +59,6 @@ describe('wakatime config', () => {
           "about:",
         ],
         "queueName": "heartbeatsQueue",
-        "socialMediaSites": [
-          "facebook.com",
-          "instagram.com",
-          "linkedin.com",
-          "pinterest.com",
-          "reddit.com",
-          "snapchat.com",
-          "tiktok.com",
-          "twitter.com",
-          "whatsapp.com",
-          "x.com",
-          "youtube.com",
-        ],
         "states": [
           "allGood",
           "trackingDisabled",
@@ -86,7 +73,6 @@ describe('wakatime config', () => {
           "notSignedIn": "Not signed In",
           "trackingDisabled": "Not logging",
         },
-        "trackSocialMedia": true,
         "version": "test-version",
       }
     `);

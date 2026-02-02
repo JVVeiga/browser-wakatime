@@ -90,7 +90,6 @@ export interface Config {
   name: string;
   nonTrackableSites: string[];
   queueName: string;
-  socialMediaSites: string[];
   states: ExtensionStatus[];
   /**
    * Get stats from the wakatime api
@@ -101,7 +100,6 @@ export interface Config {
    */
   theme: Theme;
   tooltips: Tooltips;
-  trackSocialMedia: boolean;
   /**
    * Version of the extension
    */
@@ -166,20 +164,6 @@ const config: Config = {
 
   queueName: 'heartbeatsQueue',
 
-  socialMediaSites: [
-    'facebook.com',
-    'instagram.com',
-    'linkedin.com',
-    'pinterest.com',
-    'reddit.com',
-    'snapchat.com',
-    'tiktok.com',
-    'twitter.com',
-    'whatsapp.com',
-    'x.com',
-    'youtube.com',
-  ],
-
   states: ['allGood', 'trackingDisabled', 'notSignedIn', 'ignored'],
 
   summariesApiEndPoint: process.env.SUMMARIES_API_URL ?? '/users/current/summaries',
@@ -192,7 +176,6 @@ const config: Config = {
     notSignedIn: 'Not signed In',
     trackingDisabled: 'Not logging',
   },
-  trackSocialMedia: true,
 
   version: browser.runtime.getManifest().version,
 };

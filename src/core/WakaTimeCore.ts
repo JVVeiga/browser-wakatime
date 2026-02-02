@@ -52,18 +52,6 @@ class WakaTimeCore {
       }
     }
 
-    if (!settings.trackSocialMedia) {
-      const domain = getDomain(url);
-      if (
-        settings.socialMediaSites.find((pattern) => {
-          const re = new RegExp(pattern.replace(/\*/g, '.*'));
-          return re.test(domain);
-        }) !== undefined
-      ) {
-        return false;
-      }
-    }
-
     // Always use allow mode: only track sites in allowList
     return (
       settings.allowList.find((pattern) => {
