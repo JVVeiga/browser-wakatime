@@ -21,7 +21,6 @@ export default function Options(): JSX.Element {
     apiKey: '',
     apiUrl: config.apiUrl,
     customProjectNames: [],
-    denyList: [],
     extensionStatus: 'allGood',
     hostname: '',
     loading: false,
@@ -34,8 +33,6 @@ export default function Options(): JSX.Element {
   });
 
   const isApiKeyValid = useMemo(() => apiKeyInvalid(state.apiKey) === '', [state.apiKey]);
-
-  const loggingStyleRef = useRef(null);
 
   const restoreSettings = useCallback(async () => {
     const settings = await getSettings();
@@ -59,7 +56,6 @@ export default function Options(): JSX.Element {
       customProjectNames: state.customProjectNames.filter(
         (item) => !!item.url.trim() && !!item.projectName.trim(),
       ),
-      denyList: state.denyList.filter((item) => !!item.trim()),
       extensionStatus: state.extensionStatus,
       hostname: state.hostname,
       loggingEnabled: state.loggingEnabled,
@@ -76,13 +72,6 @@ export default function Options(): JSX.Element {
     }
   };
 
-  const updateDenyListState = useCallback((denyList: string[]) => {
-    setState((oldState) => ({
-      ...oldState,
-      denyList,
-    }));
-  }, []);
-
   const updateAllowListState = useCallback((allowList: string[]) => {
     setState((oldState) => ({
       ...oldState,
@@ -94,13 +83,6 @@ export default function Options(): JSX.Element {
     setState((oldState) => ({
       ...oldState,
       customProjectNames,
-    }));
-  }, []);
-
-  const updateLoggingStyle = useCallback((style: string) => {
-    setState((oldState) => ({
-      ...oldState,
-      loggingStyle: style === 'allow' ? 'allow' : 'deny',
     }));
   }, []);
 
@@ -125,35 +107,17 @@ export default function Options(): JSX.Element {
     }));
   }, []);
 
-  const loggingStyle = useCallback(() => {
-    // TODO: rewrite SitesList to be structured inputs instead of textarea
-
-    if (state.loggingStyle == 'deny') {
-      return (
-        <SitesList
-          handleChange={updateDenyListState}
-          label="Exclude"
-          sites={state.denyList}
-          helpText="Sites that you don't want to show in your reports."
-        />
-      );
-    }
+  const allowedSitesList = useMemo(() => {
     return (
       <SitesList
         handleChange={updateAllowListState}
-        label="Include"
+        label="Allowed Sites"
         sites={state.allowList}
         projectNamePlaceholder="http://google.com&#10;http://myproject.com/MyProject"
-        helpText="Only track these sites."
+        helpText="Only these sites will be tracked."
       />
     );
-  }, [
-    state.allowList,
-    state.denyList,
-    state.loggingStyle,
-    updateAllowListState,
-    updateDenyListState,
-  ]);
+  }, [state.allowList, updateAllowListState]);
 
   return (
     <div className="container">
@@ -175,23 +139,7 @@ export default function Options(): JSX.Element {
               />
             </div>
 
-            <div className="form-group mb-4">
-              <label htmlFor="loggingStyle" className="form-label">
-                Logging style
-              </label>
-              <select
-                id="loggingStyle"
-                ref={loggingStyleRef}
-                className="form-control"
-                value={state.loggingStyle}
-                onChange={(e) => updateLoggingStyle(e.target.value)}
-              >
-                <option value="deny">All except excluded sites</option>
-                <option value="allow">Only allowed sites</option>
-              </select>
-            </div>
-
-            {loggingStyle()}
+            {allowedSitesList}
 
             <div className="form-group mb-4">
               <label htmlFor="loggingType" className="form-label">

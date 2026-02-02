@@ -11,7 +11,6 @@ export interface Settings {
   apiKey: string;
   apiUrl: string;
   customProjectNames: ProjectName[];
-  denyList: string[];
   extensionStatus: ExtensionStatus;
   hostname: string;
   loggingEnabled: boolean;
@@ -27,9 +26,7 @@ export const getSettings = async (): Promise<Settings> => {
     allowList: [],
     apiKey: config.apiKey,
     apiUrl: config.apiUrl,
-    blacklist: null,
     customProjectNames: [],
-    denyList: [],
     hostname: config.hostname,
     loggingEnabled: config.loggingEnabled,
     loggingStyle: config.loggingStyle,
@@ -39,7 +36,6 @@ export const getSettings = async (): Promise<Settings> => {
     trackSocialMedia: true,
     whitelist: null,
   })) as Omit<Settings, 'socialMediaSites'> & {
-    blacklist?: string;
     socialMediaSites: string[] | string;
     whitelist?: string;
   };
@@ -49,11 +45,6 @@ export const getSettings = async (): Promise<Settings> => {
     settings.allowList = settings.whitelist.trim().split('\n');
     await browser.storage.sync.set({ allowList: settings.allowList });
     await browser.storage.sync.remove('whitelist');
-  }
-  if (typeof settings.blacklist === 'string') {
-    settings.denyList = settings.blacklist.trim().split('\n');
-    await browser.storage.sync.set({ denyList: settings.denyList });
-    await browser.storage.sync.remove('blacklist');
   }
 
   if (typeof settings.socialMediaSites === 'string') {
@@ -68,11 +59,10 @@ export const getSettings = async (): Promise<Settings> => {
     apiKey: settings.apiKey,
     apiUrl: settings.apiUrl,
     customProjectNames: settings.customProjectNames,
-    denyList: settings.denyList,
     extensionStatus: settings.extensionStatus,
     hostname: settings.hostname,
     loggingEnabled: settings.loggingEnabled,
-    loggingStyle: settings.loggingStyle,
+    loggingStyle: 'allow',
     loggingType: settings.loggingType,
     socialMediaSites: settings.socialMediaSites,
     theme: settings.theme,
@@ -91,15 +81,11 @@ export const saveSettings = async (settings: Settings): Promise<void> => {
 
 export const ignoreSite = async (site: string): Promise<void> => {
   const settings = await getSettings();
-  if (settings.loggingStyle === 'deny') {
-    const url = new URL(site).host;
-    settings.denyList.push(url);
-  } else {
-    settings.allowList = settings.allowList.filter((regex) => {
-      const re = new RegExp(regex.replace(/\*/g, '.*'));
-      return !re.test(site);
-    });
-  }
+  // Always in allow mode: remove from allowList
+  settings.allowList = settings.allowList.filter((regex) => {
+    const re = new RegExp(regex.replace(/\*/g, '.*'));
+    return !re.test(site);
+  });
   await saveSettings(settings);
 };
 

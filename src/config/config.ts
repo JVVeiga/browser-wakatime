@@ -154,7 +154,7 @@ const config: Config = {
 
   loggingEnabled: true,
 
-  loggingStyle: 'deny',
+  loggingStyle: 'allow',
 
   loggingType: 'domain',
 

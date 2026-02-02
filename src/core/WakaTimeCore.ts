@@ -64,14 +64,7 @@ class WakaTimeCore {
       }
     }
 
-    if (settings.loggingStyle === 'deny') {
-      return (
-        settings.denyList.find((pattern) => {
-          const re = new RegExp(pattern.replace(/\*/g, '.*'));
-          return re.test(url);
-        }) == undefined
-      );
-    }
+    // Always use allow mode: only track sites in allowList
     return (
       settings.allowList.find((pattern) => {
         const re = new RegExp(pattern.replace(/\*/g, '.*'));

@@ -50,7 +50,7 @@ describe('wakatime config', () => {
         "heartbeatApiEndPoint": "/users/current/heartbeats.bulk",
         "hostname": "",
         "loggingEnabled": true,
-        "loggingStyle": "deny",
+        "loggingStyle": "allow",
         "loggingType": "domain",
         "logoutUserUrl": "https://wakatime.com/logout",
         "name": "WakaTime",
