@@ -1,0 +1,95 @@
+name: Build and Release
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Create release artifacts directory
+        run: mkdir -p release-artifacts
+
+      - name: Copy Chrome artifact
+        run: cp dist/chrome/web-ext-artifacts/wakatime-*.zip release-artifacts/wakatime-chrome.zip
+
+      - name: Copy Firefox artifact
+        run: cp dist/firefox/web-ext-artifacts/wakatime-*.zip release-artifacts/wakatime-firefox.zip
+
+      - name: Copy Edge artifact (same as Chrome)
+        run: cp dist/edge/web-ext-artifacts/wakatime-*.zip release-artifacts/wakatime-edge.zip
+
+      - name: Copy installation guide
+        run: cp INSTALL.md release-artifacts/
+
+      - name: Get release
+        id: get_release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const release = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: context.ref.replace('refs/tags/', '')
+            });
+            return release.data;
+
+      - name: Upload Chrome artifact to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ fromJSON(steps.get_release.outputs.result).upload_url }}
+          asset_path: ./release-artifacts/wakatime-chrome.zip
+          asset_name: wakatime-chrome-${{ github.ref_name }}.zip
+          asset_content_type: application/zip
+
+      - name: Upload Firefox artifact to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ fromJSON(steps.get_release.outputs.result).upload_url }}
+          asset_path: ./release-artifacts/wakatime-firefox.zip
+          asset_name: wakatime-firefox-${{ github.ref_name }}.zip
+          asset_content_type: application/zip
+
+      - name: Upload Edge artifact to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ fromJSON(steps.get_release.outputs.result).upload_url }}
+          asset_path: ./release-artifacts/wakatime-edge.zip
+          asset_name: wakatime-edge-${{ github.ref_name }}.zip
+          asset_content_type: application/zip
+
+      - name: Upload installation guide
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ fromJSON(steps.get_release.outputs.result).upload_url }}
+          asset_path: ./release-artifacts/INSTALL.md
+          asset_name: INSTALL.md
+          asset_content_type: text/markdown
