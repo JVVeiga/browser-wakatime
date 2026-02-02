@@ -13,10 +13,26 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
       await WakaTimeCore.sendHeartbeats();
     }
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (alarm && alarm.name === 'refreshMonitoredSites') {
+    const { getSettings, updateMonitoredSites } = await import('./utils/settings');
+    const settings = await getSettings();
+    if (settings.apiKey) {
+      try {
+        await updateMonitoredSites(settings.apiKey, settings.apiUrl);
+      } catch (error) {
+        console.error('Background monitored sites refresh failed:', error);
+      }
+    }
+  }
 });
 
 // Create a new alarm for sending cached heartbeats.
 browser.alarms.create('heartbeatAlarm', { periodInMinutes: 2 });
+
+// Create alarm for periodic monitored sites refresh (every 30 minutes)
+browser.alarms.create('refreshMonitoredSites', { periodInMinutes: 30 });
 
 /**
  * Whenever a active tab is changed it records a heartbeat with that tab url.

@@ -13,9 +13,11 @@ export interface Settings {
   customProjectNames: ProjectName[];
   extensionStatus: ExtensionStatus;
   hostname: string;
+  lastMonitoredSitesFetch?: number;
   loggingEnabled: boolean;
   loggingStyle: LoggingStyle;
   loggingType: LoggingType;
+  monitoredSitesError?: string | null;
   theme: Theme;
 }
 
@@ -26,9 +28,11 @@ export const getSettings = async (): Promise<Settings> => {
     apiUrl: config.apiUrl,
     customProjectNames: [],
     hostname: config.hostname,
+    lastMonitoredSitesFetch: undefined,
     loggingEnabled: config.loggingEnabled,
     loggingStyle: config.loggingStyle,
     loggingType: config.loggingType,
+    monitoredSitesError: null,
     theme: config.theme,
     whitelist: null,
   })) as Settings & {
@@ -49,9 +53,11 @@ export const getSettings = async (): Promise<Settings> => {
     customProjectNames: settings.customProjectNames,
     extensionStatus: settings.extensionStatus,
     hostname: settings.hostname,
+    lastMonitoredSitesFetch: settings.lastMonitoredSitesFetch,
     loggingEnabled: settings.loggingEnabled,
     loggingStyle: 'allow',
     loggingType: 'domain',
+    monitoredSitesError: settings.monitoredSitesError,
     theme: settings.theme,
   };
 };
@@ -91,4 +97,32 @@ export const getApiUrl = async () => {
 
 export const getWebsiteUrl = async () => {
   return (await getApiUrl()).replace('/api/v1', '').replace('://api.', '://');
+};
+
+export const updateMonitoredSites = async (apiKey: string, apiUrl?: string): Promise<void> => {
+  const { fetchMonitoredSites, mapToAllowList, mapToCustomProjectNames } = await import(
+    './monitoredSites'
+  );
+
+  try {
+    const data = await fetchMonitoredSites(apiKey, apiUrl);
+
+    const settings = await getSettings();
+    settings.allowList = mapToAllowList(data.sites);
+    settings.customProjectNames = mapToCustomProjectNames(data.sites);
+    settings.lastMonitoredSitesFetch = Date.now();
+    settings.monitoredSitesError = null;
+
+    await saveSettings(settings);
+  } catch (error) {
+    // On error: clear everything
+    const settings = await getSettings();
+    settings.allowList = [];
+    settings.customProjectNames = [];
+    settings.monitoredSitesError =
+      (error as Error).message || 'Failed to fetch monitored sites';
+
+    await saveSettings(settings);
+    throw error;
+  }
 };

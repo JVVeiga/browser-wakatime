@@ -2,15 +2,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import config, { SuccessOrFailType } from '../config/config';
 import apiKeyInvalid from '../utils/apiKey';
 import { IS_CHROME } from '../utils/operatingSystem';
-import { getSettings, ProjectName, saveSettings, Settings } from '../utils/settings';
+import { getSettings, saveSettings, Settings } from '../utils/settings';
 import { logUserIn } from '../utils/user';
-import CustomProjectNameList from './CustomProjectNameList';
-import SitesList from './SitesList';
 
 interface State extends Settings {
   alertText: string;
   alertType: SuccessOrFailType;
   loading: boolean;
+  refreshing: boolean;
 }
 
 export default function Options(): JSX.Element {
@@ -27,6 +26,7 @@ export default function Options(): JSX.Element {
     loggingEnabled: true,
     loggingStyle: config.loggingStyle,
     loggingType: config.loggingType,
+    refreshing: false,
     theme: config.theme,
   });
 
@@ -38,6 +38,25 @@ export default function Options(): JSX.Element {
       ...oldState,
       ...settings,
     }));
+
+    // Auto-fetch if API Key exists and data is stale (> 5 minutes)
+    if (settings.apiKey) {
+      const fiveMinutes = 5 * 60 * 1000;
+      const isStale =
+        !settings.lastMonitoredSitesFetch ||
+        Date.now() - settings.lastMonitoredSitesFetch > fiveMinutes;
+
+      if (isStale) {
+        try {
+          const { updateMonitoredSites } = await import('../utils/settings');
+          await updateMonitoredSites(settings.apiKey, settings.apiUrl);
+          const updated = await getSettings();
+          setState((oldState) => ({ ...oldState, ...updated }));
+        } catch (error) {
+          // Fail silently on page load
+        }
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -47,41 +66,71 @@ export default function Options(): JSX.Element {
   const handleSubmit = async () => {
     if (state.loading) return;
     setState((oldState) => ({ ...oldState, loading: true }));
+
+    // Check if API Key or URL changed
+    const oldSettings = await getSettings();
+    const apiKeyChanged = oldSettings.apiKey !== state.apiKey;
+    const apiUrlChanged = oldSettings.apiUrl !== state.apiUrl;
+
+    // Save basic settings first
     await saveSettings({
-      allowList: state.allowList.filter((item) => !!item.trim()),
+      allowList: state.allowList,
       apiKey: state.apiKey,
       apiUrl: state.apiUrl,
-      customProjectNames: state.customProjectNames.filter(
-        (item) => !!item.url.trim() && !!item.projectName.trim(),
-      ),
+      customProjectNames: state.customProjectNames,
       extensionStatus: state.extensionStatus,
       hostname: state.hostname,
+      lastMonitoredSitesFetch: state.lastMonitoredSitesFetch,
       loggingEnabled: state.loggingEnabled,
       loggingStyle: state.loggingStyle,
       loggingType: state.loggingType,
+      monitoredSitesError: state.monitoredSitesError,
       theme: state.theme,
     });
-    setState(state);
+
+    // If API credentials changed, fetch monitored sites
+    if ((apiKeyChanged || apiUrlChanged) && state.apiKey) {
+      try {
+        const { updateMonitoredSites } = await import('../utils/settings');
+        await updateMonitoredSites(state.apiKey, state.apiUrl);
+        const updatedSettings = await getSettings();
+        setState((old) => ({ ...old, ...updatedSettings }));
+      } catch (error) {
+        // Error already handled in updateMonitoredSites
+        const updatedSettings = await getSettings();
+        setState((old) => ({ ...old, ...updatedSettings }));
+      }
+    }
+
     await logUserIn(state.apiKey);
+    setState((old) => ({ ...old, loading: false }));
     if (IS_CHROME) {
       window.close();
     }
   };
 
-  const updateAllowListState = useCallback((allowList: string[]) => {
-    setState((oldState) => ({
-      ...oldState,
-      allowList,
-    }));
-  }, []);
+  const handleRefreshMonitoredSites = useCallback(async () => {
+    if (!state.apiKey) return;
 
-  const updateCustomProjectNamesState = useCallback((customProjectNames: ProjectName[]) => {
-    setState((oldState) => ({
-      ...oldState,
-      customProjectNames,
-    }));
-  }, []);
+    setState((old) => ({ ...old, refreshing: true }));
 
+    try {
+      const { updateMonitoredSites } = await import('../utils/settings');
+      await updateMonitoredSites(state.apiKey, state.apiUrl);
+      const updatedSettings = await getSettings();
+      setState((old) => ({
+        ...old,
+        ...updatedSettings,
+        refreshing: false,
+      }));
+    } catch (error) {
+      setState((old) => ({
+        ...old,
+        monitoredSitesError: (error as Error).message,
+        refreshing: false,
+      }));
+    }
+  }, [state.apiKey, state.apiUrl]);
 
   const updateTheme = useCallback((theme: string) => {
     setState((oldState) => ({
@@ -90,17 +139,59 @@ export default function Options(): JSX.Element {
     }));
   }, []);
 
-  const allowedSitesList = useMemo(() => {
+  const monitoredSitesDisplay = useMemo(() => {
     return (
-      <SitesList
-        handleChange={updateAllowListState}
-        label="Allowed Sites"
-        sites={state.allowList}
-        projectNamePlaceholder="http://google.com&#10;http://myproject.com/MyProject"
-        helpText="Only these sites will be tracked."
-      />
+      <div className="form-group mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <label className="form-label mb-0">Monitored Sites</label>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-primary"
+            onClick={handleRefreshMonitoredSites}
+            disabled={!state.apiKey || state.refreshing}
+          >
+            {state.refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+
+        {state.monitoredSitesError && (
+          <div className="alert alert-danger" role="alert">
+            {state.monitoredSitesError}
+          </div>
+        )}
+
+        <div className="list-group">
+          {state.customProjectNames.length === 0 ? (
+            <div className="alert alert-warning">
+              No monitored sites configured.{' '}
+              {state.apiKey ? 'Click Refresh to load from API.' : 'Please enter an API Key first.'}
+            </div>
+          ) : (
+            state.customProjectNames.map((site, index) => (
+              <div key={index} className="list-group-item">
+                <strong>{site.projectName}</strong>
+                <br />
+                <small className="text-muted">{site.url}</small>
+              </div>
+            ))
+          )}
+        </div>
+
+        {state.lastMonitoredSitesFetch && (
+          <small className="text-muted">
+            Last updated: {new Date(state.lastMonitoredSitesFetch).toLocaleString()}
+          </small>
+        )}
+      </div>
     );
-  }, [state.allowList, updateAllowListState]);
+  }, [
+    handleRefreshMonitoredSites,
+    state.apiKey,
+    state.customProjectNames,
+    state.lastMonitoredSitesFetch,
+    state.monitoredSitesError,
+    state.refreshing,
+  ]);
 
   return (
     <div className="container">
@@ -122,7 +213,7 @@ export default function Options(): JSX.Element {
               />
             </div>
 
-            {allowedSitesList}
+            {monitoredSitesDisplay}
 
             <div className="form-group mb-4">
               <label htmlFor="selectTheme" className="form-label mb-0">
@@ -154,13 +245,6 @@ export default function Options(): JSX.Element {
                 Optional name of local machine. By default &apos;Unknown Hostname&apos;.
               </span>
             </div>
-
-            <CustomProjectNameList
-              sites={state.customProjectNames}
-              label="Custom Project Names"
-              handleChange={updateCustomProjectNamesState}
-              helpText=""
-            />
 
             <div className="form-group mb-4">
               <label htmlFor="apiUrl" className="form-label mb-0">
