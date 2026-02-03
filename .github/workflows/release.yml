@@ -36,9 +36,6 @@ jobs:
       - name: Copy Firefox artifact
         run: cp dist/firefox/web-ext-artifacts/wakatime-*.zip release-artifacts/wakatime-firefox.zip
 
-      - name: Copy Edge artifact (same as Chrome)
-        run: cp dist/edge/web-ext-artifacts/wakatime-*.zip release-artifacts/wakatime-edge.zip
-
       - name: Copy installation guide
         run: cp INSTALL.md release-artifacts/
 
@@ -72,16 +69,6 @@ jobs:
           upload_url: ${{ fromJSON(steps.get_release.outputs.result).upload_url }}
           asset_path: ./release-artifacts/wakatime-firefox.zip
           asset_name: wakatime-firefox-${{ github.ref_name }}.zip
-          asset_content_type: application/zip
-
-      - name: Upload Edge artifact to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ fromJSON(steps.get_release.outputs.result).upload_url }}
-          asset_path: ./release-artifacts/wakatime-edge.zip
-          asset_name: wakatime-edge-${{ github.ref_name }}.zip
           asset_content_type: application/zip
 
       - name: Upload installation guide
