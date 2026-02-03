@@ -6,8 +6,7 @@ import { configLogout, setLoggingEnabled } from '../reducers/configReducer';
 import { userLogout } from '../reducers/currentUser';
 import { ReduxSelector } from '../types/store';
 import { User } from '../types/user';
-import changeExtensionState, { changeExtensionStatus } from '../utils/changeExtensionStatus';
-import { ignoreSite } from '../utils/settings';
+import changeExtensionState from '../utils/changeExtensionStatus';
 
 export interface MainListProps {
   currentTabUrl: string;
@@ -26,7 +25,6 @@ export default function MainList({
   currentTabUrl,
 }: MainListProps): JSX.Element {
   const dispatch = useDispatch();
-  const [hideIgnoreButton, setHideIgnoreButton] = useState(false);
 
   const user: User | undefined = useSelector(
     (selector: ReduxSelector) => selector.currentUser.user,
@@ -54,12 +52,6 @@ export default function MainList({
     await changeExtensionState('trackingDisabled');
   };
 
-  const ignoreSitePressed = async (): Promise<void> => {
-    await ignoreSite(currentTabUrl);
-    await changeExtensionStatus('ignored');
-    setHideIgnoreButton(true);
-  };
-
   const loading = isLoading ? (
     <div className="placeholder-glow">
       <span className="placeholder col-12"></span>
@@ -83,24 +75,6 @@ export default function MainList({
         loading
       )}
 
-      {!isDomainIgnored && user && !hideIgnoreButton ? (
-        <div className="row">
-          <div className="col-xs-12">
-            <p>
-              <a
-                href="#"
-                onClick={ignoreSitePressed}
-                className="btn btn-danger btn-block w-100 btn-sm"
-              >
-                <i className="fa fa-fw fa-eye-slash me-2" />
-                Ignore site
-              </a>
-            </p>
-          </div>
-        </div>
-      ) : (
-        loading
-      )}
       <div className="list-group my-3">
         <a href="#" className="list-group-item text-body-secondary" onClick={openOptionsPage}>
           <i className="fa fa-fw fa-cogs me-2" />
